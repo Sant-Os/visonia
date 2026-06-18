@@ -1,21 +1,22 @@
-# Sistema Integral de Videovigilancia Autónoma (SIVA-T)
-## Inteligencia Artificial Proactiva basada en Redes Neuronales Transformers
+# Sistema Integral de Videovigilancia Autónoma
+## Inteligencia Artificial Proactiva basada en Redes Neuronales Transformadoras
 
 ---
 
 ## 1. Introducción y Problemática
-**Teoría:** Los sistemas tradicionales de videovigilancia (CCTV) son pasivos y dependen de un operador humano, quien sufre de fatiga visual a los pocos minutos. Los algoritmos clásicos de "detección de píxeles en movimiento" disparan miles de falsas alarmas (perros, sombras, lluvia).
-**Solución:** Este proyecto es un **Centro de Mando Biométrico**. Extrae la topología matemática de las personas (huesos y articulaciones) y utiliza un Modelo Transformer (la misma arquitectura subyacente que ChatGPT) para procesar secuencias de tiempo. Así logra diferenciar un comportamiento criminal de una actividad cotidiana normal de forma autónoma.
+**Teoría:** Los sistemas tradicionales de videovigilancia son pasivos y dependen de un operador humano, quien sufre de fatiga visual a los pocos minutos. Los algoritmos clásicos de "detección de píxeles en movimiento" disparan miles de falsas alarmas (perros, sombras, lluvia).
+
+**Solución:** Este proyecto es un **Centro de Mando Biométrico**. Extrae la topología matemática de las personas (huesos y articulaciones) y utiliza un Modelo Transformador (la misma arquitectura matemática subyacente que las inteligencias artificiales conversacionales modernas) para procesar secuencias de tiempo. Así logra diferenciar un comportamiento criminal de una actividad cotidiana normal de forma completamente autónoma.
 
 ---
 
 ## 2. Fuentes de Datos y Recursos Externos
-Este sistema se construyó integrando los siguientes ecosistemas de vanguardia:
-1. **Ultralytics YOLOv8 (Visión y Postura)** - [https://github.com/ultralytics/ultralytics](https://github.com/ultralytics/ultralytics) (Extracción de esqueletos y armas).
+Este sistema se construyó integrando los siguientes ecosistemas de vanguardia de código abierto:
+1. **Ultralytics YOLO versión 8 (Visión y Postura)** - [https://github.com/ultralytics/ultralytics](https://github.com/ultralytics/ultralytics) (Extracción de esqueletos y armas).
 2. **DeepFace (Biometría Facial)** - [https://github.com/serengil/deepface](https://github.com/serengil/deepface) (Modelo VGG-Face y RetinaFace).
-3. **PyTorch (Motor Neuronal)** - [https://pytorch.org/](https://pytorch.org/) (Construcción del Transformer).
+3. **PyTorch (Motor Neuronal)** - [https://pytorch.org/](https://pytorch.org/) (Construcción del Modelo Transformador).
 4. **HuggingFace AST (Audio)** - [MIT/ast-finetuned-audioset](https://huggingface.co/MIT/ast-finetuned-audioset-10-10-0.4593) (Análisis de espectrogramas acústicos).
-5. **COCO Dataset** - [https://cocodataset.org/](https://cocodataset.org/) (Diccionario estándar mundial para detección de objetos).
+5. **Conjunto de Datos COCO** - [https://cocodataset.org/](https://cocodataset.org/) (Diccionario estándar mundial para detección de objetos).
 
 ---
 
@@ -29,11 +30,48 @@ pip install deepface tf-keras sounddevice transformers pyaudio
 
 ---
 
-## 4. Desglose Teórico y Técnico (Módulo por Módulo)
+## 4. Arquitectura del Sistema (Ejecución en Paralelo)
 
-### 4.1. Extracción Biomecánica y Normalización Espacial
+Para evitar que el video se congele, el programa no procesa la inteligencia artificial de manera lineal. Utiliza un ejecutor de hilos paralelos. Mientras el hilo principal dibuja la pantalla a 30 cuadros por segundo, envía el video a tres "sub-hilos" que analizan amenazas por detrás.
+
+```mermaid
+graph TD
+    A[Cámara / Entrada de Video] -->|30 Cuadros por Segundo| B(Hilo Principal: Lector de Cuadros)
+    B --> C{Ejecutor de Hilos en Paralelo}
+    
+    C -->|Sub-hilo 1| D[Extractor de Postura YOLO]
+    D --> E[Extracción 17 Articulaciones]
+    E --> F[Normalización de Cadera]
+    F --> G[Memoria Temporal: 30 cuadros]
+    G --> H[Red Neuronal Transformadora]
+    H --> I((Clasificación de Acción Físicas))
+    
+    C -->|Sub-hilo 2| J[Detector de Objetos YOLO]
+    J --> K((Detección Armas y Sabotaje))
+    
+    C -->|Sub-hilo 3| L[Sistema Facial DeepFace]
+    L --> M((Identidad Facial Matemática))
+    
+    N[Entrada de Micrófono] --> O[Modelo Acústico HuggingFace]
+    O --> P((Alerta Acústica Sirenas))
+    
+    I --> Q[Motor Lógico Integrador y Pantalla]
+    K --> Q
+    M --> Q
+    P --> Q
+    
+    Q --> R{¿Amenaza Detectada?}
+    R -->|Sí| S[Registros y Envío de Telegram]
+    R -->|No| T[Actualización de Pantalla en vivo]
+```
+
+---
+
+## 5. Desglose Teórico y Técnico (Módulo por Módulo)
+
+### 5.1. Extracción Biomecánica y Normalización Espacial
 **La Teoría:** 
-¿De dónde salen las 34 coordenadas? YOLO extrae el esqueleto humano en **17 articulaciones clave** (Ojos, Nariz, Codos, Rodillas, etc.). Como vivimos en un plano de video 2D, cada punto tiene un valor de Eje `X` y un Eje `Y` (17 x 2 = 34).
+¿De dónde salen las 34 coordenadas? El extractor encuentra el esqueleto humano en **17 articulaciones clave** (Ojos, Nariz, Codos, Rodillas, etc.). Como vivimos en un plano de video de dos dimensiones, cada punto tiene un valor de Eje `X` y un Eje `Y` (17 x 2 = 34).
 Para que la red neuronal no se confunda si la persona está muy cerca a la cámara (se ve grande) o muy lejos (se ve pequeña), aplicamos la **Centralización Euclidiana de Cadera**. Anclamos la cadera humana a la coordenada `(0.0, 0.0)` restándole su valor a todo el resto del cuerpo. Así evaluamos puramente la "Postura".
 
 **El Código (`pose_extractor.py`):**
@@ -71,22 +109,22 @@ class PoseExtractor:
 
 ---
 
-### 4.2. Registro y Recolección de Datos Biométricos
+### 5.2. Registro y Recolección de Datos Biométricos
 **La Teoría:**
-Una Inteligencia Artificial se entrena con datos. Con la tecla `[R]`, el usuario graba un comportamiento (ej. "Caída"). El sistema toma la matriz de postura `[17, 2]` y la "aplana" (flatten) para convertirla en un vector unidimensional largo de 34 posiciones. Finalmente, pega el nombre de la acción al principio de la lista y lo inyecta como una fila nueva en un archivo Excel (`dataset_poses.csv`).
+Una Inteligencia Artificial se entrena con datos. Con la tecla `[R]`, el usuario graba un comportamiento (por ejemplo, "Caída"). El sistema toma la matriz de postura `[17, 2]` y la "aplana" para convertirla en un vector unidimensional largo de 34 posiciones. Finalmente, pega el nombre de la acción al principio de la lista y lo inyecta como una fila nueva en un archivo de valores separados por comas (`dataset_poses.csv`).
 
 **El Código (`collect_data.py`):**
 ```python
 import pandas as pd
 
-# (Mientras el estado es "GRABANDO" a 30 FPS...)
+# (Mientras el estado es "GRABANDO" a 30 Cuadros por Segundo...)
 if state == "RECORDING":
     people_landmarks = extractor.extract(frame) # Matriz de 17x2
     
     for p_id, info in people_landmarks.items():
         kpts = info['landmarks']
         
-        # Aplanar la Matriz [17,2] a una lista plana de 34 valores
+        # Aplanar la Matriz a una lista plana de 34 valores
         flat_kpts = kpts.flatten().tolist()
         
         # Insertar la Clase (Ej. 'accidente' o 'forcejeo') como primera columna
@@ -101,9 +139,9 @@ new_df.to_csv('dataset_poses.csv', mode='a', index=False)
 
 ---
 
-### 4.3. El Cerebro Neuronal: Entrenamiento y Predicción Transformer
+### 5.3. El Cerebro Neuronal: Entrenamiento y Predicción Transformadora
 **La Teoría:**
-Con la tecla `[T]` iniciamos el entrenamiento del cerebro. Evaluar "violencia" viendo solo 1 fotograma es imposible. Por eso, el código agarra los datos del CSV y los agrupa en ventanas de tiempo de **30 cuadros consecutivos** (1 segundo de movimiento real). Un `TransformerEncoderLayer` analiza cómo evoluciona la postura a través del tiempo, usando atención global para procesar todos los frames en paralelo. El optimizador `Adam` usa retropropagación del error (`CrossEntropyLoss`) para ajustar el modelo a lo largo de 20 épocas.
+Con la tecla `[T]` iniciamos el entrenamiento del cerebro. Evaluar "violencia" viendo solo 1 fotograma es imposible. Por eso, el código agarra los datos y los agrupa en ventanas de tiempo de **30 cuadros consecutivos** (1 segundo de movimiento real). Una Capa Transformadora analiza cómo evoluciona la postura a través del tiempo, usando atención global para procesar todos los cuadros en paralelo. El optimizador usa **Retropropagación** del error (Pérdida de Entropía Cruzada) para ajustar el modelo a lo largo de 20 Ciclos de Entrenamiento.
 
 **El Código (`action_classifier.py`):**
 ```python
@@ -113,10 +151,10 @@ import torch.nn as nn
 class ActionTransformer(nn.Module):
     def __init__(self, input_dim=34, num_classes=6, hidden_dim=64, num_layers=2):
         super().__init__()
-        # Elevar las 34 coordenadas a un hiperplano oculto de 64 dimensiones
+        # Elevar las 34 coordenadas a una representación matemática oculta de 64 dimensiones
         self.embedding = nn.Linear(input_dim, hidden_dim)
         
-        # Capa de Atención Global Transformer (Entendimiento Temporal)
+        # Capa de Atención Global Transformadora (Entendimiento Temporal)
         encoder_layer = nn.TransformerEncoderLayer(d_model=hidden_dim, nhead=4, batch_first=True)
         self.transformer = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
         
@@ -146,9 +184,9 @@ def train():
 
 ---
 
-### 4.4. Detección de Objetos Peligrosos y Amenazas Estáticas
+### 5.4. Detección Criminológica y Amenazas Estáticas
 **La Teoría:**
-Se emplea una red neuronal paralela convolucional (YOLO Object) para identificar ítems inanimados. Hemos filtrado el diccionario global COCO para buscar exclusivamente 6 amenazas directas. Se implementó una lógica de rastreo espacial (`tracking`): si detecta una mochila y esta no se mueve un solo píxel durante 15 segundos, asume que es una potencial amenaza de terrorismo o robo.
+Se emplea una red neuronal paralela para identificar elementos inanimados. Hemos filtrado el diccionario global para buscar exclusivamente 6 amenazas directas. Se implementó una lógica de rastreo espacial: si detecta una mochila y esta no se mueve un solo píxel durante 15 segundos, asume que es una potencial amenaza de terrorismo o robo.
 
 **El Código (`object_detector.py`):**
 ```python
@@ -157,7 +195,7 @@ from ultralytics import YOLO
 class DangerousObjectDetector:
     def __init__(self, model_name='yolov8s.pt'):
         self.model = YOLO(model_name)
-        # IDs extraídos estrictamente del COCO Dataset mundial
+        # Identificadores extraídos estrictamente del Conjunto de Datos Mundial
         self.level_1_classes = [67] # Celular
         self.level_2_classes = [24] # Mochila (Alerta Equipaje Desatendido)
         self.level_4_classes = [43, 34, 76, 39] # Cuchillo, Bate de Béisbol, Tijeras, Botella
@@ -183,9 +221,9 @@ class DangerousObjectDetector:
 
 ---
 
-### 4.5. Procesamiento Acústico y Ciberseguridad Acústica
+### 5.5. Procesamiento Acústico y Ciberseguridad
 **La Teoría:**
-El micrófono no graba audio plano, usa el paquete *Sounddevice* para generar un archivo PCM. Luego pasamos ese sonido crudo por un Transformador de Espectrogramas (AST de HuggingFace) que analiza la onda de sonido como si fuera una imagen para buscar picos de frecuencia artificial (Sirenas, Alarmas).
+El micrófono no graba audio plano, genera un archivo digital puro. Luego pasamos ese sonido crudo por un Transformador de Espectrogramas que analiza la onda de sonido como si fuera una imagen para buscar picos de frecuencia artificial (Sirenas, Alarmas).
 
 **El Código (`audio_detector.py`):**
 ```python
@@ -194,16 +232,16 @@ from transformers import pipeline
 
 class AudioAlertDetector:
     def __init__(self):
-        # Se carga el modelo Acústico desde los servidores HF
+        # Se carga el modelo Acústico
         self.classifier = pipeline("audio-classification", model="MIT/ast-finetuned-audioset-10-10-0.4593")
         self.alert_classes = ["Siren", "Alarm", "Fire alarm", "Police car (siren)"]
 
     def listen_and_detect(self, duration_seconds=2, sample_rate=16000):
-        # Interceptamos hardware de micrófono
+        # Interceptamos el micrófono físico
         recording = sd.rec(int(duration_seconds * sample_rate), samplerate=sample_rate, channels=1, dtype='float32')
         sd.wait()
         
-        # Inferencia Acústica
+        # Análisis Acústico
         audio_data = recording.flatten()
         results = self.classifier(audio_data)
         
@@ -214,45 +252,26 @@ class AudioAlertDetector:
 
 ---
 
-### 4.6. Ejecución Asíncrona (El Orquestador)
-**La Teoría:**
-Procesar un modelo Transformer, un modelo acústico, dos modelos YOLO y un motor de renderizado simultáneamente en Python tradicional colapsaría el rendimiento a 2 FPS. Para evitar esto, `app.py` utiliza Multithreading (`ThreadPoolExecutor`) enviando el peso pesado a procesadores paralelos mientras renderiza la pantalla de forma ininterrumpida.
-
-**El Código (`app.py`):**
-```python
-import concurrent.futures
-
-# Sub-hilos paralelos despachados en la función ai_processing_loop
-future_pose = self.executor.submit(self.pose_extractor.extract, frame)
-future_obj = self.executor.submit(self.object_detector.detect, frame)
-
-# El HUD no se bloquea, y solo extrae la respuesta cuando el hilo GPU termina
-people_landmarks = future_pose.result()
-danger_objects_info = future_obj.result()
-```
-
----
-
-## 5. Diccionario Definitivo de Categorías y Situaciones Registradas
-El sistema actual es capaz de entender las siguientes taxonomías de eventos, las cuales son reportadas e impresas en el registro local (`alertas.log`) y enviadas vía API a Telegram.
+## 6. Diccionario Definitivo de Categorías y Situaciones Registradas
+El sistema actual es capaz de entender las siguientes clasificaciones de eventos, las cuales son reportadas e impresas en el registro local y enviadas a través de mensajes al teléfono celular.
 
 ### Comportamiento Biomecánico Físico
 * `Normal`: Patrones de caminata o espera estáticos y comunes.
-* `Accidente/Caída`: Patrón acelerado hacia el eje negativo de Y. El cuerpo colapsa y no recupera altura.
+* `Accidente/Caída`: Patrón acelerado hacia el eje inferior. El cuerpo colapsa y no recupera altura.
 * `Acecho`: Ángulo espinal inclinado con extremidades rígidas durante períodos prolongados en una misma área.
-* `Escape`: Frecuencia de impacto en el eje inferior alterada (patas / tobillos a máxima velocidad alejándose del lente).
-* `Sumisión`: Puntos clave correspondientes a las muñecas sostenidos a la altura de los hombros o por encima de la cabeza bajo inducción de estrés.
+* `Escape`: Frecuencia de impacto en el eje inferior alterada (pies y tobillos a máxima velocidad alejándose del lente).
+* `Sumisión`: Articulaciones correspondientes a las muñecas sostenidas a la altura de los hombros o por encima de la cabeza bajo inducción de estrés.
 * `Forcejeo`: Múltiples esqueletos humanos entrelazados con movimiento vibracional errático que no coincide con un saludo.
 
 ### Amenazas Balísticas e Inanimadas
 * `Cuchillo` o `Arma Cortopunzante` (Nivel 4 Crítico).
 * `Bate de Béisbol` o Contundentes (Nivel 4 Crítico).
-* `Mochila / Equipaje` (Se escala a Crítico si excede el timer de 15s de abandono espacial).
+* `Mochila / Equipaje` (Se escala a Crítico si excede el conteo de 15 segundos de abandono espacial).
 
 ### Anti-Sabotaje y Evasión (Cámaras Cegadas)
-* `Oclusión por Cinta/Mano`: Ocurre cuando el canal BGR de la matriz promedia un valor lumínico de oscuridad extrema (`mean < 15`).
-* `Ataque Láser/Linterna`: Deslumbramiento artificial de píxeles (`mean > 240`).
-* `Pasamontañas/Cascos`: El sistema captura una cadera, hombros y extremidades pero es incapaz algorítmicamente de extraer los vectores biométricos de la nariz (Punto 0) y los ojos (Punto 1 y 2).
+* `Obstrucción por Cinta/Mano`: Ocurre cuando el color de la matriz promedia un valor lumínico de oscuridad extrema (menor a 15).
+* `Ataque Láser/Linterna`: Deslumbramiento artificial de píxeles (mayor a 240).
+* `Pasamontañas/Cascos`: El sistema captura una cadera, hombros y extremidades pero es incapaz algorítmicamente de extraer los vectores biométricos de la nariz y los ojos.
 
 ### Frecuencias Acústicas Externas
 * `Sirena Policial / Ambulancias`
