@@ -1,19 +1,53 @@
-# Documentación Científica y Arquitectónica
-## Sistema Inteligente de Videovigilancia Autónoma basado en Transformers (SIVA-T)
+# Sistema Integral de Videovigilancia Autónoma (SIVA-T)
+## Basado en Arquitecturas Transformer y Visión Computacional
 
 ---
 
-## 1. Resumen Ejecutivo y Problemática
+## 1. Descripción y Problemática
 
-En la seguridad física contemporánea, el **CCTV (Circuito Cerrado de Televisión)** padece de una vulnerabilidad insalvable: la **dependencia de la atención humana**. Estudios de ergonomía visual demuestran que un operador humano pierde el 90% de la eficacia en la detección de anomalías tras 20 minutos de monitorización pasiva. Además, los sistemas tradicionales de "Detección de Movimiento" sufren de una tasa inaceptable de falsos positivos (activados por cambios de iluminación, animales o ruidos visuales).
+**La Problemática:**
+Los sistemas de videovigilancia tradicionales (CCTV) padecen de una falla fundamental: son pasivos. Dependen por completo de que un operador humano esté mirando la pantalla exacta en el segundo exacto en el que ocurre un incidente. Además, los sistemas clásicos de "detección de movimiento" generan excesivos falsos positivos (activados por cambios de luz o sombras), volviéndolos inútiles para predecir intenciones criminales complejas o emergencias en tiempo real.
 
-**SIVA-T** resuelve esta problemática eliminando el análisis a nivel de píxel crudo y trasladándolo a un **análisis topológico y biomecánico**. Al extraer las coordenadas matemáticas de los cuerpos presentes y pasarlas por una Red Neuronal Transformer, el sistema adquiere "entendimiento espacial y temporal", logrando diferenciar con precisión matemática un abrazo de un estrangulamiento, o a alguien esperando un autobús de alguien acechando una puerta.
+**La Solución Implementada:**
+Hemos desarrollado un **Centro de Mando Biométrico** proactivo. En lugar de analizar píxeles crudos, el sistema extrae el "esqueleto matemático" de las personas y utiliza Inteligencia Artificial Avanzada (Redes Neuronales Transformers) para entender el flujo del tiempo. Diferencia con precisión un abrazo de un estrangulamiento, audita el entorno sonoro, identifica rostros autorizados, y escala amenazas automáticamente a través de alertas en Telegram.
 
 ---
 
-## 2. Arquitectura de Alto Nivel del Sistema
+## 2. Tecnologías, Librerías y Repositorios
 
-El software fue diseñado bajo una arquitectura modular asíncrona (Multihilo) para garantizar una renderización de la interfaz en tiempo real sin verse estrangulada por el alto costo computacional de la inferencia neuronal.
+El ecosistema tecnológico está construido sobre **Python 3.12** utilizando librerías Open-Source de vanguardia:
+
+1. **PyTorch (`torch`, `torch.nn`):** Motor principal de tensores y derivadas usado para crear y entrenar el Cerebro Neuronal (Transformer).
+2. **YOLOv8 (`ultralytics`):** Modelos preentrenados del repositorio de Ultralytics utilizados para dos frentes: *Pose Estimation* (`yolov8n-pose.pt`) y *Object Detection* (`yolov8n.pt`).
+3. **OpenCV (`cv2`):** Captura de video en tiempo real, manipulación de matrices de píxeles y renderizado de la interfaz gráfica HUD.
+4. **DeepFace:** Framework de reconocimiento facial que envuelve detectores como *RetinaFace* y modelos como *VGG-Face*.
+5. **HuggingFace Transformers:** Se utiliza el modelo AST (`MIT/ast-finetuned-audioset-10-10-0.4593`) para procesar espectrogramas de sonido.
+6. **PyAudio / WebRTCVAD / Sounddevice:** Captura de ráfagas acústicas desde el micrófono.
+7. **Pandas & NumPy:** Estructuración matemática y gestión del dataset CSV de entrenamiento.
+
+---
+
+## 3. Guía de Instalación
+
+Para levantar este proyecto, es necesario clonar el repositorio e instalar las dependencias exactas en un entorno virtual:
+
+```bash
+# 1. Clonar el repositorio
+git clone https://github.com/Sant-Os/visonia.git
+cd visonia
+
+# 2. Instalar el Core de Machine Learning y Visión Computacional
+pip install torch torchvision ultralytics opencv-python pandas numpy
+
+# 3. Instalar librerías de Rostros y Audio
+pip install deepface tf-keras sounddevice transformers pyaudio
+```
+
+---
+
+## 4. Arquitectura del Sistema (Flujo de Hilos en Paralelo)
+
+El código principal (`app.py`) utiliza `concurrent.futures.ThreadPoolExecutor` para no ralentizar el video. Mientras el hilo principal dibuja el HUD a 30 FPS, envía el video a tres "sub-hilos" que analizan amenazas por detrás.
 
 ```mermaid
 graph TD
@@ -23,102 +57,129 @@ graph TD
     C -->|Sub-hilo 1| D[YOLOv8 Pose]
     D --> E[Extracción 17 Puntos]
     E --> F[Normalización de Cadera]
-    F --> G[Memoria Temporal: Deque 30 cuadros]
+    F --> G[Memoria Temporal: 30 frames]
     G --> H[Red Neuronal Transformer]
     H --> I((Clasificación de Acción Físicas))
     
     C -->|Sub-hilo 2| J[YOLOv8 Objects]
     J --> K((Detección Armas y Sabotaje))
     
-    C -->|Sub-hilo 3| L[DeepFace / RetinaFace]
+    C -->|Sub-hilo 3| L[DeepFace]
     L --> M((Identidad Facial y Embeddings))
-    
-    N[Micrófono Input] --> O[HuggingFace AST Model]
-    O --> P((Alerta Acústica Sirenas))
-    
-    I --> Q[Motor Lógico Integrador y HUD]
-    K --> Q
-    M --> Q
-    P --> Q
-    
-    Q --> R{¿Amenaza Detectada?}
-    R -->|Sí| S[Logs y Envío de Telegram Bot]
-    R -->|No| T[Actualización de UI en vivo]
 ```
 
 ---
 
-## 3. Profundización Técnica de Módulos Core
+## 5. El Secreto Matemático: Por qué son 34 Coordenadas y Cómo se Guardan
 
-### 3.1. Extracción y Normalización Espacial (YOLOv8 Pose)
-La primera capa de extracción reduce a la persona de una matriz de píxeles a un esqueleto matemático de **17 puntos clave (Keypoints)**. Al multiplicar 17 puntos por sus coordenadas cartesianas (X, Y), obtenemos un **Vector de Estado de 34 dimensiones** por cada cuadro de video.
+### Extracción de Puntos (YOLOv8 Pose)
+La magia reside en que la IA de comportamiento no mira la imagen completa, mira puntos espaciales. El modelo YOLO detecta **17 articulaciones humanas** (Orejas, Ojos, Nariz, Hombros, Codos, Muñecas, Caderas, Rodillas, Tobillos).
 
-> [!TIP]
-> **El problema de la Varianza de Escala:** Una persona a 1 metro de la cámara generará coordenadas X,Y muy distantes entre su cabeza y sus pies. Si esa persona se aleja a 10 metros, la distancia matemática se encoge. Esto confundiría fatalmente a la red neuronal.
+Como el video es bidimensional, cada uno de estos 17 puntos tiene un valor horizontal (X) y uno vertical (Y).
+> **17 articulaciones × 2 ejes (X, Y) = 34 coordenadas exactas.**
 
-**La Solución: Centralización Euclidiana**
-El algoritmo busca los puntos `11 y 12` (Cadera Izquierda y Derecha) para calcular el centro pélvico. Todas las demás coordenadas del cuerpo se re-calculan restando la posición de este centro. 
-*Resultado:* La persona queda anclada matemáticamente al origen cartesiano `(0,0)`, logrando que el modelo analice puramente la "postura" y no el tamaño o ubicación en la pantalla.
-
-### 3.2. El Cerebro Temporal: Red Neuronal Transformer
-Para analizar "comportamiento", analizar un solo cuadro estático es inútil (no se puede saber si un brazo levantado es un saludo o un golpe). Se necesita entender el flujo del tiempo.
-
-En lugar de usar redes recurrentes antiguas (LSTM/RNN), implementamos un **Encoder Transformer** (La misma arquitectura subyacente que ChatGPT).
-* **Entrada:** Matriz tridimensional de forma `(Batch, 30_Frames, 34_Coordenadas)`.
-* **Mecanismo de Auto-Atención:** La red correlaciona el movimiento del codo en el cuadro 1 con el movimiento del hombro en el cuadro 15, descubriendo patrones geométricos invisibles al ojo humano.
-* **Arquitectura de Capas:**
-  - `Linear Embedding`: Eleva las 34 coordenadas a un hiperplano de 64 dimensiones.
-  - `Transformer Layers`: 2 bloques profundos con 4 cabezales de atención paralelos (`nhead=4`).
-  - `Mean Pooling`: Comprime el entendimiento temporal de 1 segundo en un solo vector.
-  - `Fully Connected`: Emite la probabilidad matemática final sobre 6 clases (Normal, Accidente, Acecho, Escape, Forcejeo, Sumisión).
-
-### 3.3. Detección de Armas y Analítica Anti-Sabotaje
-El sistema no es ciego a los objetos inanimados. Corre un modelo paralelo YOLOv8 enfocado únicamente en extraer el recuadro (Bounding Box) de entidades peligrosas.
-
-* **Heurística de Equipaje Desatendido:** El sistema rastrea cajas con la clase `Mochila`. Si el centro geométrico de la mochila permanece en las mismas coordenadas espaciales exactas durante `> 15.0 segundos`, se activa la alerta DEFCON 2.
-* **Cegado Láser / Obstrucción:** A nivel de OpenCV, se calcula el `np.mean(frame)` (brillo promedio). Un valor superior a `240` indica que un láser o linterna apunta al lente. Un valor inferior a `15` indica que una mano o cinta opaca cubrió la cámara.
-
-### 3.4. Reconocimiento Facial y Lógica de Identidad
-Utilizamos la librería *DeepFace* operando de forma diferida (Asíncrona) para no frenar los 30 FPS del video.
-1. Se recorta el rostro detectado por YOLO.
-2. Se procesa a través de una red convolucional profunda (VGG-Face) que genera un array de **128 dimensiones** (Firma Facial Única).
-3. Se compara contra todos los archivos de la carpeta `conocidos/` usando la métrica de Distancia Coseno. Si la similitud pasa un umbral de confianza estricto, la persona se marca como "Autorizada".
-
-### 3.5. Análisis Acústico (Audio Spectrogram Transformer - AST)
-El sistema ejecuta un loop de interrupción en el micrófono. Captura ráfagas de 2 a 5 segundos de audio PCM. 
-La forma de onda cruda se convierte a un **Espectrograma de Mel** (una representación de la imagen visual del sonido), que es procesada por un modelo de HuggingFace preentrenado con *AudioSet* para detectar frecuencias complejas inconfundibles (Sirenas, Alarmas de Incendio).
+### Centralización (Normalización de Escala)
+Si una persona está cerca de la cámara, es "grande". Si está lejos, es "pequeña". Para que el modelo Transformer no se confunda con la distancia, aplicamos una normalización matemática: **Anclaje de Cadera**.
+Buscamos las Caderas (Puntos 11 y 12), las definimos como el origen temporal `(0, 0)` y restamos esta posición a los demás puntos. Así, el modelo evalúa puramente la forma del cuerpo, independientemente de dónde esté en la pantalla.
 
 ---
 
-## 4. Ingeniería de Datos: Ciclo Human-in-the-Loop
+## 6. Proceso de Recolección de Datos y Entrenamiento
 
-La flexibilidad del sistema recae en que no es una "caja negra" prefabricada; es moldeable al entorno específico de despliegue mediante las herramientas `[R] Recolectar` y `[T] Entrenar`.
+### ¿Dónde y Cómo se Guardan? (`dataset_poses.csv`)
+Cuando se usa la función de grabación, los datos matemáticos se escriben iterativamente en `dataset_poses.csv`. Una fila se ve así:
 
-#### El formato de Entrenamiento (`dataset_poses.csv`)
-Cuando se graban datos, el software empuja iterativamente filas al CSV estructurado de la siguiente forma:
+| class | coord_0_x | coord_0_y | ... | coord_16_y |
+|-------|-----------|-----------|-----|------------|
+| forcejeo | -0.15 | -0.40 | ... | 0.85 |
 
-| class | coord_0 | coord_1 | ... | coord_33 |
-|-------|---------|---------|-----|----------|
-| normal| 0.04    | -0.3    | ... | 0.45     |
-| forcejeo| 0.12    | -0.15   | ... | 0.32     |
+### Recolección de Datos (Tecla `[R]`)
+La recolección se dispara mediante la interfaz HUD (script `collect_data.py` interno). El usuario se para frente a la cámara, selecciona la acción que quiere enseñar (ej. "Normal" sosteniendo un teclado) y graba durante 10 segundos. El script extrae las 34 coordenadas a 30 FPS y añade 300 nuevas filas matemáticas al CSV.
 
-*(La coordenada 0 representa el X de la nariz relativo a la cadera, la 1 representa el Y de la nariz relativo a la cadera, etc.)*
-
-#### Proceso de Entrenamiento y Retropropagación
-Al invocar `action_classifier.py`, el sistema:
-1. Convierte el CSV a Tensores de PyTorch (`DataLoader`).
-2. Agrupa los datos en secuencias deslizantes (Ventanas superpuestas de 30 frames para simular continuidad de video).
-3. Aplica **CrossEntropyLoss** para calcular el error entre la suposición de la IA y la realidad, y el optimizador **Adam** ajusta los pesos en retropropagación.
-4. Tras 20 ciclos (Epochs), se exporta el modelo óptimo al binario compilado `action_model.pth`.
+### Fase de Entrenamiento (Tecla `[T]`)
+El entrenamiento (`action_classifier.py`) ocurre localmente. 
+El archivo `dataset_poses.csv` es absorbido por un `DataLoader`. La Red Neuronal se somete a un proceso de *Backpropagation* usando optimización Adam para minimizar el margen de error. El aprendizaje es guardado (compilado) en el archivo binario **`action_model.pth`**.
 
 ---
 
-## 5. Casos de Aplicación Práctica y Escalado
+## 7. Detalle del Código Core Implementado
 
-Debido a su naturaleza agnóstica al hardware (procesa vectores matemáticos ligeros en la fase de Transformer, no imágenes gigantes), este sistema es implementable en:
-- **Pasillos de Colegios:** Detectando bullying (clase Forcejeo o Sumisión).
-- **Hospitales y Residencias:** Detectando caídas o accidentes médicos asíncronos para emitir alertas inmediatas.
-- **Tiendas / Almacenes:** Notificando individuos que merodean repisas (Acecho) u ocultan su identidad con pasamontañas.
-- **Zonas Restringidas Corporativas:** Vinculando rostros autorizados al registro horario o de planillas de la empresa.
+### A. La Red Neuronal (Transformer)
+Este es el código exacto implementado en `action_classifier.py` que deduce la violencia o la pasividad analizando ventanas de tiempo. Usamos `TransformerEncoderLayer` porque, a diferencia del LSTM, posee "Atención Global", logrando correlacionar el movimiento de una mano en el cuadro 1 con la cabeza en el cuadro 30 de forma instantánea.
 
-La conjunción de Python puro, PyTorch y C++ subyacente (mediante OpenCV), permite que este sistema opere fluidamente incluso en procesadores de gama media sin depender íntegramente de costosas GPUs dedicadas.
+```python
+import torch.nn as nn
+
+class ActionTransformer(nn.Module):
+    def __init__(self, input_dim=34, num_classes=6, hidden_dim=64, num_layers=2):
+        super().__init__()
+        # Inyecta las 34 coordenadas en un hiperespacio de 64 dimensiones
+        self.embedding = nn.Linear(input_dim, hidden_dim)
+        
+        # Capa Transformer: Analiza la relación temporal (nhead=4 cabezales de atención)
+        encoder_layer = nn.TransformerEncoderLayer(d_model=hidden_dim, nhead=4, batch_first=True)
+        self.transformer = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
+        
+        # Reducción matemática a las 6 categorías posibles
+        self.fc = nn.Linear(hidden_dim, num_classes)
+        
+    def forward(self, x):
+        # x recibe una matriz de: (Batch, 30_cuadros_consecutivos, 34_coordenadas)
+        x = self.embedding(x)
+        x = self.transformer(x)
+        x = x.mean(dim=1) # Promedio el entendimiento del segundo entero
+        return self.fc(x)
+```
+
+### B. Inferencia de Postura y Normalización (`pose_extractor.py`)
+```python
+# Extracción con YOLOv8
+kpts_all = results.keypoints.xyn.cpu().numpy()
+
+for kpts in kpts_all:
+    # Encontrar la cadera (Puntos 11 y 12)
+    center_x = (kpts[11][0] + kpts[12][0]) / 2.0
+    center_y = (kpts[11][1] + kpts[12][1]) / 2.0
+    
+    # Restar el centro pélvico a todo el cuerpo (Normalización)
+    normalized_kpts = kpts.copy()
+    normalized_kpts[:, 0] -= center_x
+    normalized_kpts[:, 1] -= center_y
+```
+
+---
+
+## 8. Capacidades Analíticas y Categorías Finales
+
+El sistema funciona como 5 motores de auditoría independientes que evalúan el peligro:
+
+### 1. Clasificación Físico/Temporal (6 Categorías)
+La Red Neuronal categoriza 1 segundo ininterrumpido de comportamiento:
+* `Normal`: Tránsito habitual.
+* `Accidente/Caída`: Patrón acelerado hacia el eje negativo de Y.
+* `Acecho`: Torso inclinado permanentemente, poco movimiento de extremidades.
+* `Escape`: Frecuencia de piernas acelerada huyendo del encuadre.
+* `Sumisión`: Puntos 9 y 10 (muñecas) localizados por encima del Punto 0 (Nariz).
+* `Forcejeo`: Anomalía errática y vibracional entre varios individuos en proximidad.
+
+### 2. Detección Criminológica (Objetos)
+Modelo YOLO enfocado en armas.
+* **Armas:** Detección de cuchillos, bates y armas de fuego (DEFCON 4).
+* **Mochilas Abandonadas:** Si un objeto detectado permanece en las mismas coordenadas exactas durante más de 15 segundos sin presencia humana, activa alarma preventiva.
+
+### 3. Anti-Sabotaje (Visión)
+* **Ceguera:** Media de píxeles globales superior a 240 (Reflejo de láser/linterna en la lente).
+* **Oclusión de Cámara:** Media de píxeles inferior a 15 (Cobertura física intencional).
+* **Ocultamiento Facial:** Extracción de cadera exitosa pero incapacidad algorítmica de localizar la nariz y ojos por más de 3 segundos (Uso de pasamontañas).
+
+### 4. Reconocimiento Facial y Base de Datos
+Cada individuo registrado genera un "embedding" facial. Las caras extraídas se envían a comparar asincrónicamente mediante *DeepFace* (VGG-Face) usando distancia del Coseno, etiquetando al individuo como Desconocido o Personal Autorizado.
+
+### 5. Detección Acústica Espectral (Audio)
+El micrófono captura muestras de 2 segundos. Empleando el modelo `AST (Audio Spectrogram Transformer)` de HuggingFace, se transforman las ondas de sonido en imágenes mel-espectro para interceptar frecuencias de:
+* Sirenas de Policía / Ambulancias
+* Alarmas contra Incendios
+* Alarmas Antirrobos
+
+## Conclusión Final
+Este desarrollo demuestra el poder de desacoplar los tensores de video. Al extraer únicamente la data topológica y procesarla a través de atención Transformer, SIVA-T procesa con fiabilidad absoluta a tiempo real incluso en computadoras convencionales, redefiniendo la seguridad reactiva en prevención predictiva.
