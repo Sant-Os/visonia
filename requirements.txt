@@ -1,0 +1,15 @@
+opencv-python
+ultralytics
+torch
+torchvision
+torchaudio
+requests
+numpy
+pandas
+scikit-learn
+sounddevice
+transformers
+psutil
+customtkinter
+pygrabber
+Pillow
